@@ -19,6 +19,7 @@
 import numpy as np
 import matplotlib
 matplotlib.use("TkAgg")
+from scipy.stats import multivariate_normal
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import math
@@ -74,7 +75,7 @@ Reflect = 0.9; #coupling ratio
 # Initialize Plotting
 fig = plt.figure(figsize=(6, 6))
 ax1 = fig.add_subplot(311)
-ax2 = fig.add_subplot(312)
+ax2 = fig.add_subplot(312, projection='3d')
 ax3 = fig.add_subplot(313)
 #ax2 = fig.add_subplot(212)
 
@@ -143,6 +144,7 @@ def TheExample():
 
 
 
+
 ##########################################################################     end of  main code
 
     ax1.clear()
@@ -163,10 +165,54 @@ def TheExample():
     ax1.axis('equal')
     ax1.set_title('laser mode')
 
-    ax2.imshow(I1, cmap='rainbow');
-    ax2.axis('off');
-    ax2.axis('equal')
-    ax2.set_title('Filter mode')
+    # ax2.imshow(I1, cmap='rainbow');
+    # ax2.axis('off');
+    # ax2.axis('equal')
+    # ax2.set_title('Filter mode')
+
+    # X = np.zeros(N)
+    # Y = np.zeros(N)
+    # I2 = np.array(Iw)
+    # ax2.plot_surface(X, Y, I2, rstride=1, cstride=1, cmap='rainbow', linewidth=0.0)
+    # #plt.axis('off');
+    # #plt.title('Far-field intensity distribution')
+    # #
+    # # plt.show()
+
+
+
+    X = np.linspace(-5, 5, 50)
+    Y = np.linspace(-5, 5, 50)
+    X, Y = np.meshgrid(X, Y)
+
+    X_mean = 0;
+    Y_mean = 0
+
+    X_var = 5;
+    Y_var = 8
+
+    pos = np.empty(X.shape + (2,))
+
+    pos[:, :, 0] = X
+
+    pos[:, :, 1] = Y
+
+    rv = multivariate_normal([X_mean, Y_mean], [[X_var, 0], [0, Y_var]])
+
+    #fig = plt.figure()
+
+    #ax = fig.add_subplot(111, projection='3d')
+
+    ax2.plot_surface(X, Y, rv.pdf(pos*P), cmap="plasma")
+
+    #ax.plot(x, y, z)
+
+   # plt.show()
+
+
+
+    #plt.show()
+
 
     ax3.plot(power);
     ax3.set_ylim(0, 10);
