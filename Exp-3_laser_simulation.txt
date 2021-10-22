@@ -408,5 +408,3 @@ def task():
 
 root.after(1, task)
 root.mainloop()
-
-
