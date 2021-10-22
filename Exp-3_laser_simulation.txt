@@ -1,12 +1,16 @@
 # The code running procedure; (Windows) Python
-# 1. install pycharm: https://www.jetbrains.com/pycharm/download/#section=windows
+# 1. install pycharm:
+# install in windows: https://www.jetbrains.com/pycharm/download/#section=windows
+# install in mac: https://www.jetbrains.com/pycharm/download/#section=mac
 # 2. Click community version downloads and install it.
 #And, install python after downloading (https://www.python.org/downloads/)
-# 3. open pycharm and paste this code into main.py.
+# 3. open pycharm and create a project (any  name), paste this code into main.py.
 # 4. To run code needs 2 packages: (a) matplotlib (b) Lightpipes
-# 5. To install packages: go to view>tool windows>python packages, a popup window will appear and type those following 2 package names and click install. After successful installing click run ( green  ">" button on upper right) button and see the results.
-#or, click terminal button on the bottom left and put command --> "pip install matplotlib" and "pip install Lightpipes"
-
+# 5. To install packages: go to view>tool windows>python packages, a popup window will appear and type those following 2 package names and click install.
+#or, click terminal button on the bottom left and put command --> "pip install matplotlib" and "pip install Lightpipes" and enter
+# if might see a bar for downloading like "==========================================================="
+# 6. # After successful installing click run ( green  ">" button on upper right) button and see the results.
+# The response time is too slow (Please wait atleast 10 seconds after each changes)
 
 #https://opticspy.github.io/lightpipes/command-reference.html
 #The Gain command introduces a simple single-layer model of a laser amplifier. The output field is
@@ -16,7 +20,9 @@
 
 
 ###################################################################################### import necessary packages
+
 import numpy as np
+from scipy.stats import norm
 import matplotlib
 matplotlib.use("TkAgg")
 from scipy.stats import multivariate_normal
@@ -61,6 +67,11 @@ f1 = 2.0 * m  #mirror M1 radius
 f2 = 5 * m    #mirror M2 radius
 w0 = 2.4 * mm # lens aperture diameter
 
+#gauss parameters
+width1 = 0.0   # the initial width of the Gauss shape
+mean1 = 0.0
+var1 = 0.0
+
 #cavity and coupling ratio
 L = 30 * cm #resonator length
 Reflect = 0.9; #coupling ratio
@@ -93,8 +104,13 @@ F = Begin(size, wavelength, N) #Initiates a field with a grid size, a wavelength
 ################################################################################# The main code is here
 
 ###Taking input from GUI
+
+#Block Diagram:   |Intensity -->M1-->M2|----------->SOA ---> Filter-->Coupler --->Atteneuation--| loop
+                     #<<------------------------------------------------------------------------|
+
+
 def TheExample():
-    global F, f1, f2, L, w0, roundtrip, Reflect
+    global F, f1, f2, L, w0, roundtrip, Reflect, width1, mean1, var1
     # start_time=time.time()
     w0 = float(scale_w0.get()) * mm / 2  # lens aperture diameter
     #xwire = float(scalexwire.get()) * mm
@@ -154,12 +170,17 @@ def TheExample():
     g1 = 1 - L / (2 * f1);   #gain from lens 1
     g2 = 1 - L / (2 * f2);   #gain from lens 2
     g = g1 * g2
-    v.set("Power=%5.3f W\n" % P +
-          "g1 = %5.3f\n" % g1 +
-          "g2 = %5.3f\n" % g2 +
-          "g  = %5.3f\n" % g
+    v.set("Power=%5.3f mW\n" % P +
+          # "g1 = %5.3f\n" % g1 +
+          # "g2 = %5.3f\n" % g2 +
+          # "g  = %5.3f\n" % g +
+          "Spatial width of Gauss  = %5.3f mm\n" %  width1 +
+          "Mean of Gauss  = %5.3f\n" % mean1 +
+          "Standard Deviation of Gauss  = %5.3f\n" % math.sqrt(var1) +
+          "variance of Gauss  = %5.3f\n" % var1
           )
 
+#################################################################  Plot 1
     ax1.imshow(Iw, cmap='rainbow');
     ax1.axis('off');
     ax1.axis('equal')
@@ -178,32 +199,45 @@ def TheExample():
     # #plt.title('Far-field intensity distribution')
     # #
     # # plt.show()
+##################################################################  Plot 2
 
-
-
+    #X = np.linspace(0, wavelength, 10)
     X = np.linspace(-5, 5, 50)
-    Y = np.linspace(-5, 5, 50)
-    X, Y = np.meshgrid(X, Y)
-
+    Y = np.linspace(0, wavelength, 10)
+    X, Y = np.meshgrid(X, Y)    #mesh 3D design
     X_mean = 0;
     Y_mean = 0
-
     X_var = 5;
     Y_var = 8
-
     pos = np.empty(X.shape + (2,))
 
+
+
     pos[:, :, 0] = X
-
     pos[:, :, 1] = Y
-
     rv = multivariate_normal([X_mean, Y_mean], [[X_var, 0], [0, Y_var]])
-
-    #fig = plt.figure()
-
-    #ax = fig.add_subplot(111, projection='3d')
-
-    ax2.plot_surface(X, Y, rv.pdf(pos*P), cmap="plasma")
+    gauss = rv.pdf(pos*P);
+    mean, var = norm.stats(2*gauss)
+    #width = norm.interval(gauss)
+    mean1 = mean[0][0]*P
+    width1 = (2* math.sqrt(var[0][0]))*1/P
+    var1 = var[0][0]*P
+    #print()
+    #print("-------------------")
+    #print(var[0][0][0])
+    ax2.plot_surface(X, Y, gauss, cmap="plasma")
+    ax2.set_xlabel('Wavelength', fontsize=10)
+    #ax2.set_ylabel('Spatial dimension', fontsize=10)
+    ax2.set_zlabel('Power', fontsize=10)
+    #ax2.axis('off');
+    #ax2.axis('equal')
+    ax2.tick_params(
+        axis='x',  # changes apply to the x-axis
+        which='both',  # both major and minor ticks are affected
+        bottom='off',  # ticks along the bottom edge are off
+        top='off',  # ticks along the top edge are off
+        labelbottom='off'  # labels along the bottom edge are off)
+    )
 
     #ax.plot(x, y, z)
 
@@ -212,7 +246,7 @@ def TheExample():
 
 
     #plt.show()
-
+    #################################################################  Plot 3
 
     ax3.plot(power);
     ax3.set_ylim(0, 10);
@@ -314,7 +348,7 @@ scale_w0 = Tk.Scale(frame2, orient='horizontal', label='aperture diameter [mm]',
 scale_w0.pack(side=Tk.LEFT)
 scale_w0.set(2 * w0 / mm)
 
-scale_Reflect = Tk.Scale(frame2, orient='horizontal', label='outcoupler reflection', length=200, from_=0.0, to=1.0,
+scale_Reflect = Tk.Scale(frame2, orient='horizontal', label='Reflectivity', length=200, from_=0.0, to=1.0,
                          resolution=0.01)
 scale_Reflect.pack(side=Tk.LEFT)
 scale_Reflect.set(Reflect)
@@ -356,11 +390,11 @@ order_m.pack(side=Tk.LEFT)
 order_n = Tk.Spinbox(frame6, width=1, from_=0, to=5)
 order_n.pack(side=Tk.LEFT, pady=10)
 
-doughnut = Tk.Checkbutton(frame6, text='doughnut', variable=dnt)
-doughnut.pack(side=Tk.LEFT, pady=10)
+#doughnut = Tk.Checkbutton(frame6, text='doughnut', variable=dnt)
+#doughnut.pack(side=Tk.LEFT, pady=10)
 
-Laguerre = Tk.Checkbutton(frame6, text='Laguerre Gauss', variable=LG)
-Laguerre.pack(side=Tk.LEFT, pady=10)
+#Laguerre = Tk.Checkbutton(frame6, text='Laguerre Gauss', variable=LG)
+#Laguerre.pack(side=Tk.LEFT, pady=10)
 
 button_quit = Tk.Button(frame7, width=24, text='Quit', command=_quit)
 button_quit.pack(side=Tk.LEFT, pady=10)
