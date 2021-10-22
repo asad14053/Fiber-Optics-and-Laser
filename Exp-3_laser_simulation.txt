@@ -215,13 +215,14 @@ def TheExample():
 
     pos[:, :, 0] = X
     pos[:, :, 1] = Y
-    rv = multivariate_normal([X_mean, Y_mean], [[X_var, 0], [0, Y_var]])
-    gauss = rv.pdf(pos*P);
-    mean, var = norm.stats(2*gauss)
+    rv = multivariate_normal([X_mean, Y_mean], [[X_var, 0], [0, Y_var]])  #apply gauss equation
+    gauss = rv.pdf(pos*P);                                                #apply laser power into gauss function
+    mean, var = norm.stats(2*gauss)                                       #find normal distribution of the gauss
     #width = norm.interval(gauss)
-    mean1 = mean[0][0]*P
-    width1 = (2* math.sqrt(var[0][0]))*1/P
-    var1 = var[0][0]*P
+    mean1 = mean[1][1]*P                                                  #find mean of the gauss
+    var1 = var[1][1] * P                                                  #find variance of the gauss
+    width1 = (2* math.sqrt(var[1][1]))*1/P                                #find width of gauss = 2*sigma of the gauss, sigma = sqrt (variance)
+
     #print()
     #print("-------------------")
     #print(var[0][0][0])
